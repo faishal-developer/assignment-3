@@ -17,6 +17,12 @@ const user_model_1 = require("./user.model");
 const ApiError_1 = __importDefault(require("../../errorHandler/ApiError"));
 const http_status_1 = __importDefault(require("http-status"));
 const createUser = (user) => __awaiter(void 0, void 0, void 0, function* () {
+    const findUser = yield user_model_1.User.findOne({
+        phoneNumber: user.phoneNumber,
+    });
+    if (findUser) {
+        throw new ApiError_1.default(409, "User allready exist");
+    }
     const result = yield user_model_1.User.create(user);
     return result;
 });
@@ -29,6 +35,15 @@ const getSingleUser = (id) => __awaiter(void 0, void 0, void 0, function* () {
     return result;
 });
 const updateUser = (id, data) => __awaiter(void 0, void 0, void 0, function* () {
+    if (Object.keys(data).length <= 0) {
+        throw new ApiError_1.default(409, "No content provided");
+    }
+    if (data.phoneNumber) {
+        console.log("kotha bolo", data.phoneNumber);
+        const isExist = yield user_model_1.User.findOne({ phoneNumber: data.phoneNumber });
+        if (isExist)
+            throw new ApiError_1.default(409, "User with phone is already exist");
+    }
     const isExist = yield user_model_1.User.findById({ _id: id });
     if (!isExist) {
         throw new ApiError_1.default(http_status_1.default.NOT_FOUND, "User not found !");
@@ -47,5 +62,5 @@ exports.userService = {
     getAllUser,
     getSingleUser,
     updateUser,
-    deleteUser
+    deleteUser,
 };

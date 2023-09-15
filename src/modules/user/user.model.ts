@@ -2,12 +2,13 @@ import { Schema, model } from "mongoose";
 import { IUser } from "./user.interface";
 import { UserModel } from "./user.interface";
 
-export const role=["seller", "buyer"];
+export const role = ["admin", "seller", "buyer"];
 const userSchema = new Schema<IUser, UserModel>(
   {
     phoneNumber: {
       type: String,
       required: true,
+      unique: true,
     },
     role: {
       type: String,
@@ -34,11 +35,11 @@ const userSchema = new Schema<IUser, UserModel>(
     },
     budget: {
       type: Number,
-      required: true,
+      // required: true,
     },
     income: {
       type: Number,
-      required: true,
+      // required: true,
     },
   },
   {

@@ -17,18 +17,14 @@ const createUser = z.object({
       required_error: "Phone Number is required",
     }),
     role: z.enum([...role] as [string, ...string[]], {
-      required_error: "Phone Number is required",
-    }),
+      required_error: "Role is required",
+    }), 
     address: z.string({
       required_error: "Address is required",
     }),
-    budget: z.number({
-      required_error: "budget is required",
-    }),
-    income: z.number({
-      required_error: "Income is required",
-    }),
-  }),
+    budget: z.number().optional(),
+    income: z.number().optional(),
+  })
 });
 
 

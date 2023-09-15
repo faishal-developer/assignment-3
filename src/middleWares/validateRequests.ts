@@ -9,7 +9,8 @@ export const validateRequest = (
             body:req.body,
             query:req.query,
             params:req.params,
-            cookies:req.cookies
+            cookies:req.cookies,
+            url:req.url
         })
         return next();
     }catch(error){

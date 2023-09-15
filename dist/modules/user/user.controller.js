@@ -31,7 +31,7 @@ const getAllUser = (0, catchAsync_1.catchAsync)((req, res, next) => __awaiter(vo
     (0, catchAsync_1.sendResponse)(res, {
         statusCode: 200,
         success: true,
-        message: "user created successfully",
+        message: "user retrived successfully",
         data: result,
     });
 }));
@@ -71,5 +71,5 @@ exports.userController = {
     getAllUser,
     getSingleUser,
     updateUser,
-    deleteUser
+    deleteUser,
 };

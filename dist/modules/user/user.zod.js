@@ -18,18 +18,14 @@ const createUser = zod_1.z.object({
             required_error: "Phone Number is required",
         }),
         role: zod_1.z.enum([...user_model_1.role], {
-            required_error: "Phone Number is required",
+            required_error: "Role is required",
         }),
         address: zod_1.z.string({
             required_error: "Address is required",
         }),
-        budget: zod_1.z.number({
-            required_error: "budget is required",
-        }),
-        income: zod_1.z.number({
-            required_error: "Income is required",
-        }),
-    }),
+        budget: zod_1.z.number().optional(),
+        income: zod_1.z.number().optional(),
+    })
 });
 const updateUser = zod_1.z.object({
     body: zod_1.z.object({

@@ -21,18 +21,28 @@ const commonFunction_1 = require("../../shared/commonFunction");
 const utils_1 = require("../../utils/utils");
 const cow_constant_1 = require("./cow.constant");
 const user_model_1 = require("../user/user.model");
-const createCow = (Cow) => __awaiter(void 0, void 0, void 0, function* () {
-    const id = Cow.seller;
+const createCow = (newCow) => __awaiter(void 0, void 0, void 0, function* () {
+    const id = newCow.seller;
     const user = yield user_model_1.User.findById({ _id: id });
-    if ((user === null || user === void 0 ? void 0 : user.role) === 'buyer') {
+    if ((user === null || user === void 0 ? void 0 : user.role) === "buyer") {
         throw new ApiError_1.default(http_status_1.default.NOT_FOUND, "Buyer can't sell a cow");
     }
-    const result = yield cow_model_1.CowModel.create(Cow);
+    if (!user) {
+        throw new ApiError_1.default(404, "Seller not found");
+    }
+    const cow = yield cow_model_1.CowModel.findOne({
+        seller: id,
+        name: newCow.name,
+    });
+    if (cow) {
+        throw new ApiError_1.default(409, "same seller same named cow is not allowed twice");
+    }
+    const result = yield cow_model_1.CowModel.create(newCow);
     return result;
 });
 const getAllCows = (queryData) => __awaiter(void 0, void 0, void 0, function* () {
     var _a;
-    const { page, limit, sortBy, sortOrder, minPrice = 0, maxPrice = utils_1.maxNumber, location, searchTerm, } = queryData;
+    const { page = "1", limit = "10", sortBy, sortOrder, minPrice = 0, maxPrice = utils_1.maxNumber, location, searchTerm, } = queryData;
     const pagination = (0, commonFunction_1.calcSkip)(page, limit);
     //searching
     let query = {};
@@ -43,14 +53,13 @@ const getAllCows = (queryData) => __awaiter(void 0, void 0, void 0, function* ()
     }
     //searchTerm
     if (searchTerm) {
-        query['$or'] = cow_constant_1.CowsSearchableFields.map((field) => ({
+        query["$or"] = cow_constant_1.CowsSearchableFields.map((field) => ({
             [field]: {
                 $regex: searchTerm,
                 $options: "i",
             },
         }));
     }
-    ;
     const sortCondition = {};
     if (sortBy) {
         sortCondition[sortBy] = (_a = sortOrder) !== null && _a !== void 0 ? _a : "asc";
@@ -59,16 +68,45 @@ const getAllCows = (queryData) => __awaiter(void 0, void 0, void 0, function* ()
         .sort(sortCondition)
         .skip(pagination.skip)
         .limit(pagination.limit);
-    return result;
+    const total = yield cow_model_1.CowModel.countDocuments(query);
+    return {
+        meta: {
+            page: Number(page),
+            limit: Number(limit),
+            count: total,
+        },
+        data: result,
+    };
 });
 const getSingleCow = (id) => __awaiter(void 0, void 0, void 0, function* () {
     const result = yield cow_model_1.CowModel.findById({ _id: id });
     return result;
 });
 const updateCow = (id, data) => __awaiter(void 0, void 0, void 0, function* () {
+    if (Object.keys(data).length <= 0) {
+        throw new ApiError_1.default(409, "NO content provided");
+    }
+    if (data.seller) {
+        const user = yield user_model_1.User.findById({ _id: id });
+        if ((user === null || user === void 0 ? void 0 : user.role) === "buyer") {
+            throw new ApiError_1.default(http_status_1.default.NOT_FOUND, "Buyer can't sell a cow");
+        }
+        if (!user) {
+            throw new ApiError_1.default(404, "Seller not found");
+        }
+    }
     const isExist = yield cow_model_1.CowModel.findById({ _id: id });
     if (!isExist) {
         throw new ApiError_1.default(http_status_1.default.NOT_FOUND, "Cow not found !");
+    }
+    if (data.name) {
+        const cow = yield cow_model_1.CowModel.findOne({
+            seller: id,
+            name: data.name,
+        });
+        if (cow) {
+            throw new ApiError_1.default(409, "same seller same named cow is not allowed twice");
+        }
     }
     const result = yield cow_model_1.CowModel.findOneAndUpdate({ _id: id }, data, {
         new: true,

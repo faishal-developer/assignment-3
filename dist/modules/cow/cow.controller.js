@@ -32,8 +32,9 @@ const getAllCows = (0, catchAsync_1.catchAsync)((req, res, next) => __awaiter(vo
     (0, catchAsync_1.sendResponse)(res, {
         statusCode: 200,
         success: true,
-        message: "Cow created successfully",
-        data: result,
+        message: "Cow Retrived successfully",
+        meta: result.meta,
+        data: result.data,
     });
 }));
 const getSingleCow = (0, catchAsync_1.catchAsync)((req, res, next) => __awaiter(void 0, void 0, void 0, function* () {

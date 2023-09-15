@@ -11,22 +11,30 @@ import { CowsSearchableFields } from "./cow.constant";
 import { userService } from "../user/user.service";
 import { User } from "../user/user.model";
 
-const createCow = async (Cow: Icow): Promise<Icow | null> => {
-  const id = Cow.seller;
-  const user = await User.findById({_id:id});
-  if(user?.role==='buyer'){
-    throw new ApiError(httpStatus.NOT_FOUND,"Buyer can't sell a cow");
+const createCow = async (newCow: Icow): Promise<Icow | null> => {
+  const id = newCow.seller;
+  const user = await User.findById({ _id: id });
+  if (user?.role === "buyer") {
+    throw new ApiError(httpStatus.NOT_FOUND, "Buyer can't sell a cow");
   }
-  const result = await CowModel.create(Cow);
+  if (!user) {
+    throw new ApiError(404, "Seller not found");
+  }
+  const cow = await CowModel.findOne({
+    seller: id,
+    name: newCow.name,
+  });
+  if (cow) {
+    throw new ApiError(409, "same seller same named cow is not allowed twice");
+  }
+  const result = await CowModel.create(newCow);
   return result;
 };
 
-const getAllCows = async (
-  queryData: Partial<IQueryData>
-): Promise<Icow[] | null> => {
+const getAllCows = async (queryData: Partial<IQueryData>) => {
   const {
-    page,
-    limit,
+    page = "1",
+    limit = "10",
     sortBy,
     sortOrder,
     minPrice = 0,
@@ -37,21 +45,21 @@ const getAllCows = async (
   const pagination = calcSkip(page, limit);
 
   //searching
-  let query:any = {};
+  let query: any = {};
   //pricing
   query.price = { $gte: Number(minPrice), $lte: Number(maxPrice) };
-  if(location){
+  if (location) {
     query.location = location;
   }
   //searchTerm
-    if (searchTerm) {
-        query['$or'] = CowsSearchableFields.map((field) => ({
-          [field]: {
-            $regex: searchTerm,
-            $options: "i",
-          },
-        }))
-    };
+  if (searchTerm) {
+    query["$or"] = CowsSearchableFields.map((field) => ({
+      [field]: {
+        $regex: searchTerm,
+        $options: "i",
+      },
+    }));
+  }
 
   //sorting condition
   type TSort = "asc" | "desc";
@@ -64,7 +72,16 @@ const getAllCows = async (
     .sort(sortCondition)
     .skip(pagination.skip)
     .limit(pagination.limit);
-  return result;
+
+  const total = await CowModel.countDocuments(query);
+  return {
+    meta: {
+      page: Number(page),
+      limit: Number(limit),
+      count: total,
+    },
+    data: result,
+  };
 };
 
 const getSingleCow = async (id: string): Promise<Icow | null> => {
@@ -76,11 +93,36 @@ const updateCow = async (
   id: string,
   data: Partial<Icow>
 ): Promise<Icow | null> => {
+  if (Object.keys(data).length <= 0) {
+    throw new ApiError(409, "NO content provided");
+  }
+  if (data.seller) {
+    const user = await User.findById({ _id: id });
+    if (user?.role === "buyer") {
+      throw new ApiError(httpStatus.NOT_FOUND, "Buyer can't sell a cow");
+    }
+    if (!user) {
+      throw new ApiError(404, "Seller not found");
+    }
+  }
   const isExist = await CowModel.findById({ _id: id });
 
   if (!isExist) {
     throw new ApiError(httpStatus.NOT_FOUND, "Cow not found !");
   }
+  if (data.name) {
+    const cow = await CowModel.findOne({
+      seller: id,
+      name: data.name,
+    });
+    if (cow) {
+      throw new ApiError(
+        409,
+        "same seller same named cow is not allowed twice"
+      );
+    }
+  }
+
   const result = await CowModel.findOneAndUpdate({ _id: id }, data, {
     new: true,
   });

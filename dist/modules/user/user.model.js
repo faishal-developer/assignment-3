@@ -2,11 +2,12 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.User = exports.role = void 0;
 const mongoose_1 = require("mongoose");
-exports.role = ["seller", "buyer"];
+exports.role = ["admin", "seller", "buyer"];
 const userSchema = new mongoose_1.Schema({
     phoneNumber: {
         type: String,
         required: true,
+        unique: true,
     },
     role: {
         type: String,
@@ -33,11 +34,11 @@ const userSchema = new mongoose_1.Schema({
     },
     budget: {
         type: Number,
-        required: true,
+        // required: true,
     },
     income: {
         type: Number,
-        required: true,
+        // required: true,
     },
 }, {
     timestamps: true,
